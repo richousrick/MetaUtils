@@ -1,5 +1,7 @@
 package richousrick.lib
 
+import java.lang
+
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import richousrick.lib.MetaUtils._
@@ -162,6 +164,56 @@ class MetaUtilsTest extends AnyFunSuite with BeforeAndAfterAll {
 	test("Mix build and run functions") {
 		assert(MetaUtils.run(build[MetaUtilsTestExample](), "isSubClass", build(classOf[SubClass])))
 	}
+
+	test("Primitive types are comparable with Number") {
+		assert(build[SomeClass](1).toString == "Int(1)")
+		assert(build[SomeClass](1f).toString == "Float(1.0)")
+		assert(build[SomeClass](1d).toString == "Misc(1.0)")
+		assertThrows[InstantiationException](build[SomeClass]("Hello"))
+		assertThrows[InstantiationException](build[SomeClass]('?'))
+	}
+
+	test("Convert to primitive works on primitives") {
+		assert(convertToPrimitive(classOf[Int]) == Integer.TYPE)
+		assert(convertToPrimitive(classOf[Integer]) == Integer.TYPE)
+		assert(convertToPrimitive(classOf[Byte]) == lang.Byte.TYPE)
+		assert(convertToPrimitive(classOf[lang.Byte]) == lang.Byte.TYPE)
+		assert(convertToPrimitive(classOf[Char]) == Character.TYPE)
+		assert(convertToPrimitive(classOf[Character]) == Character.TYPE)
+		assert(convertToPrimitive(classOf[Boolean]) == lang.Boolean.TYPE)
+		assert(convertToPrimitive(classOf[lang.Boolean]) == lang.Boolean.TYPE)
+	}
+
+	test("Convert to primitive returns class if not primitive") {
+		// test class without TYPE specified
+		assert(convertToPrimitive(classOf[String]) == classOf[String])
+
+		// test class with TYPE specified to a non class
+		assert(convertToPrimitive(classOf[SuperClass]) == classOf[SuperClass])
+		// test class with TYPE pointing to a primitive class
+		assert(convertToPrimitive(classOf[AnotherSubClass]) == classOf[AnotherSubClass])
+	}
+
+	test("CompareI primitive incomparable with non primitive") {
+		assert(compareClassI(classOf[Integer], Integer.TYPE) == -2)
+		assert(compareClassI(lang.Boolean.TYPE, classOf[lang.Boolean]) == -2)
+	}
+
+	test("CompareI numberPatch works") {
+		// enabled
+		assert(compareClassI(classOf[Number], Integer.TYPE) == 1)
+		assert(compareClassI(Integer.TYPE, classOf[Number]) == -1)
+
+		// disabled
+		assert(compareClassI(classOf[Number], Integer.TYPE, numPrimitivePatch = false) == -2)
+		assert(compareClassI(Integer.TYPE, classOf[Number], numPrimitivePatch = false) == -2)
+	}
+
+	test("Compare unbox works") {
+		assert(compareClass(classOf[Integer], Integer.TYPE) == 0)
+		assert(compareClass(lang.Boolean.TYPE, classOf[lang.Boolean]) == 0)
+		assert(compareClass(lang.Boolean.TYPE, classOf[Boolean]) == 0)
+	}
 }
 
 
@@ -178,6 +230,7 @@ abstract class SuperClass(val ID: Int)
 
 class SubClass extends SuperClass(0) {
 	val innerClass = new InnerClass
+	val TYPE = 1
 
 	def secondCheck: Boolean = innerClass.isValid
 
@@ -187,4 +240,18 @@ class SubClass extends SuperClass(0) {
 
 }
 
-class AnotherSubClass(ID: Int) extends SuperClass(ID)
+class AnotherSubClass(ID: Int) extends SuperClass(ID) {
+	val TYPE: Class[_] = Integer.TYPE
+}
+
+
+class SomeClass private(num: Number, kind: String) {
+
+	def this(i: Int) = this(i, "Int")
+
+	def this(f: Float) = this(f, "Float")
+
+	def this(n: Number) = this(n, "Misc")
+
+	override def toString = s"$kind($num)"
+}

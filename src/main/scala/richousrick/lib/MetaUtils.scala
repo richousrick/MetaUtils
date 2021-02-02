@@ -270,19 +270,8 @@ object MetaUtils {
 			// params types match
 			f =>
 				f.getParameterTypes.zip(params).forall {
-					case (c1: Class[_], c2: Class[_]) =>
-						if (c1.isPrimitive && !c2.isPrimitive) {
-							/*
-							If the desired parameter is specified as primitive but the provided parameter is not,
-							it may be the case the parameter provided is a wrapper for the desired class.
-							e.g. the function takes int, and an Integer is provided.
-							Therefore the method will attempt to get the primitive class by calling wrapperClass.TYPE
-							If found this will be compared with c1
-							 */
-							c1.isAssignableFrom(Try(c2.getField("TYPE")).toOption.map(_.get(c2).asInstanceOf[Class[_]]).getOrElse(c2))
-						} else {
-							c1.isAssignableFrom(c2)
-						}
+					case (c1: Class[_], c2: Class[_]) => compareClass(c1, c2) >= 0
+					case _ => throw new RuntimeException("This should not be reachable")
 				}
 		)
 		// check over the number of matching methods
@@ -307,7 +296,6 @@ object MetaUtils {
 	 * e.g. A <&lt;: B <br>
 	 * List(B, C), Method(A, C) => true,
 	 * List(A, C), Method(B, C) => false <br>
-	 * TODO: Improve to throw Exception in cases where there is no one best function. <br>
 	 * Im not sure if its possible, but in cases such as <br>
 	 * A &lt;: B, C &lt;: D, with functions F(A, D), F(B,C) <br>
 	 * calling F(A,C) would not be resolvable.
@@ -318,9 +306,87 @@ object MetaUtils {
 	 */
 	private def isBetter(currentBest: Array[Class[_]], method: Executable): Boolean = {
 		method.getParameterTypes.zipWithIndex.foreach(p =>
-			if (p._1 != currentBest(p._2) && p._1.isAssignableFrom(currentBest(p._2))) return false)
+			compareClass(p._1, currentBest(p._2)) match {
+				case 1 => return false // parameter in current best is more specific than the one in the method
+				case -1 => return true // parameter in method is more specific than the one in the current best
+				case 0 => // parameters are identical
+				case -2 => // this should never be the case
+					throw new Exception("Comparing two methods that have incomparable parameters")
+			})
 		true
 	}
+
+	/**
+	 * Compares two classes to one another, taking into account primitive classes.
+	 * i.e. if only one of the two classes are primitive, it will attempt to convert the other to a primitive too.
+	 *
+	 * @param c1 the first class to compare
+	 * @param c2 the second class to compare
+	 * @return
+	 * 1 if c2 <: c1
+	 * 0 if c1 == c2
+	 * -1 if c1 <: c2
+	 * -2 otherwise
+	 */
+	def compareClass(c1: Class[_], c2: Class[_]): Int =
+		(c1.isPrimitive, c2.isPrimitive) match {
+			case (true, false) => compareClassI(c1, convertToPrimitive(c2))
+			case (false, true) => compareClassI(convertToPrimitive(c1), c2)
+			case _ => compareClassI(c1, c2)
+		}
+
+	/**
+	 * Compares two classes to one another
+	 *
+	 * @param c1                the first class to compare
+	 * @param c2                the second class to compare
+	 * @param numPrimitivePatch what Class[Number].isAssignableFrom(Class[primitive number]) should return.
+	 * @return
+	 * 1 if c2 <: c1
+	 * 0 if c1 == c2
+	 * -1 if c1 <: c2
+	 * -2 otherwise
+	 */
+	def compareClassI(c1: Class[_], c2: Class[_], numPrimitivePatch: Boolean = true): Int =
+		if (c1 == c2)
+			0
+		else if (c1.isAssignableFrom(c2))
+			1
+		else if (c2.isAssignableFrom(c1))
+			-1
+		else (c1, c2) match { // Check that a primitive numeric type is not being compared to Number
+			case _ if !numPrimitivePatch => -2
+			case (c1, c2) if c1 == classOf[Number] && c2.isPrimitive && numericPrimitives.contains(c2) => 1
+			case (c1, c2) if c2 == classOf[Number] && c1.isPrimitive && numericPrimitives.contains(c1) => -1
+			case _ => -2
+		}
+
+	/**
+	 * Attempts to get the primitive class from a given class.
+	 * Note: this returns clazz if clazz is not a primitive wrapper class
+	 *
+	 * @param clazz class to attempt to convert to a primitive class
+	 * @return either the primitive version of clazz, or clazz if no primitive was found
+	 */
+	def convertToPrimitive(clazz: Class[_]): Class[_] =
+		if (clazz.getName.startsWith("java.lang"))
+			Try(clazz.getField("TYPE")).toOption.map(_.get(clazz)) match {
+				case Some(c: Class[_]) => c
+				case _ => clazz
+			} else clazz
+
+	/**
+	 * Set of all numeric primitive classes.
+	 * Used in compare class, to fix problem comparing Number and primitives.
+	 * i.e. Number.isAssignableFrom(int) == false
+	 */
+	private val numericPrimitives: Set[Class[_]] = Set(
+		convertToPrimitive(classOf[Byte]),
+		convertToPrimitive(classOf[Short]),
+		convertToPrimitive(classOf[Int]),
+		convertToPrimitive(classOf[Long]),
+		convertToPrimitive(classOf[Float]),
+		convertToPrimitive(classOf[Double]))
 }
 
 
