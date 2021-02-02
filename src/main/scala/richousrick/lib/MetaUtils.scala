@@ -79,6 +79,7 @@ object MetaUtils {
 	 * @tparam C type of the desired object
 	 * @return the desired constructor if one was found
 	 */
+	//TODO: Search companion apply
 	def findConstructor[C](clazz: Class[C], params: Class[_]*): Option[Constructor[C]] =
 		filterExecutables[Constructor[C]](clazz.getConstructors.map(_.asInstanceOf[Constructor[C]]), params: _*)()
 
@@ -102,7 +103,7 @@ object MetaUtils {
 	 * @see [[richousrick.lib.MetaUtils#runOption]]
 	 */
 	def run[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): R =
-		runOption[R](instance, funcName, params: _*) match {
+		runOpt[R](instance, funcName, params: _*) match {
 			case Some(r) => r
 			case None => throw new NoSuchMethodError()
 		}
@@ -123,7 +124,7 @@ object MetaUtils {
 	 * @tparam R , return type
 	 * @return Some(instance.funcName(params)), if such a function exists. None otherwise
 	 */
-	def runOption[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
+	def runOpt[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
 		getGenericFunction(instance,
 			funcName,
 			rt.runtimeClass.asInstanceOf[Class[R]],
@@ -295,6 +296,7 @@ object MetaUtils {
 					// if method is more specific then update current target
 					case meth if isBetter(mostSpecificMethod.getParameterTypes, meth) =>
 						mostSpecificMethod = meth
+					case _ =>
 				}
 				Some(mostSpecificMethod)
 		}
