@@ -156,11 +156,6 @@ class MetaUtilsTest extends AnyFunSuite with BeforeAndAfterAll {
 		assertThrows[InstantiationException](build(classOf[SubClass], "hello"))
 	}
 
-	test("Build new instance without class type specification cannot compile") {
-		assertDoesNotCompile("val a:SubClass = build()")
-		assertDoesNotCompile("val a:AnotherSubClass = build(6)")
-	}
-
 	test("Mix build and run functions") {
 		assert(MetaUtils.run(build[MetaUtilsTestExample](), "isSubClass", build(classOf[SubClass])))
 	}

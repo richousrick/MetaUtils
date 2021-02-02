@@ -25,7 +25,7 @@ object MetaUtils {
 	 * @throws InstantiationError if the desired constructor cannot be found
 	 * @return the created object
 	 */
-	def build[C: NotNothing](params: Any*)(implicit rt: ClassTag[C]): C =
+	def build[C](params: Any*)(implicit rt: ClassTag[C]): C =
 		buildOpt[C](params: _*) match {
 			case Some(c) => c
 			case None => throw new InstantiationException("Constructor not found")
@@ -57,7 +57,7 @@ object MetaUtils {
 	 * @tparam C type of object to instantiate with the constructor
 	 * @return the created object if successful, None otherwise.
 	 */
-	def buildOpt[C: NotNothing](params: Any*)(implicit rt: ClassTag[C]): Option[C] =
+	def buildOpt[C](params: Any*)(implicit rt: ClassTag[C]): Option[C] =
 		buildOpt[C](rt.runtimeClass.asInstanceOf[Class[C]], params: _*)
 
 	/**
@@ -143,10 +143,10 @@ object MetaUtils {
 	 * @tparam P base type of data the parameters take.
 	 * @return a function literal representing the desired function, if one was found
 	 */
-	def getFunction[C, R: NotNothing, P](instance: C,
-																			 funcName: String,
-																			 returnType: Class[R],
-																			 params: Class[P]*): Option[Seq[P] => R] =
+	def getFunction[C, R, P](instance: C,
+													 funcName: String,
+													 returnType: Class[R],
+													 params: Class[P]*): Option[Seq[P] => R] =
 		getGenericFunction(instance, funcName, returnType, params: _*)(allowGenericReturns = false)
 
 	/**
@@ -181,10 +181,10 @@ object MetaUtils {
 	 * @tparam P base type of data the parameters take.
 	 * @return a function literal that allows the desired function to be invoked, if such a function was found.
 	 */
-	def buildFunction[C, R: NotNothing, P](clazz: Class[C],
-																				 funcName: String,
-																				 returnType: Class[R],
-																				 params: Class[P]*): Option[(C, Seq[P]) => R] =
+	def buildFunction[C, R, P](clazz: Class[C],
+														 funcName: String,
+														 returnType: Class[R],
+														 params: Class[P]*): Option[(C, Seq[P]) => R] =
 		buildGenericFunction(clazz, funcName, returnType, params: _*)(allowGenericReturns = false)
 
 	/**
@@ -224,10 +224,10 @@ object MetaUtils {
 	 * @tparam R type of data the function should return
 	 * @return the desired function, if found
 	 */
-	def findFunction[C, R: NotNothing](clazz: Class[C],
-																		 funcName: String,
-																		 returnType: Class[R],
-																		 params: Class[_]*): Option[Method] =
+	def findFunction[C, R](clazz: Class[C],
+												 funcName: String,
+												 returnType: Class[R],
+												 params: Class[_]*): Option[Method] =
 		findGenericFunction(clazz, funcName, returnType, params: _*)(allowGenericReturns = false)
 
 	/**
@@ -387,27 +387,4 @@ object MetaUtils {
 		convertToPrimitive(classOf[Long]),
 		convertToPrimitive(classOf[Float]),
 		convertToPrimitive(classOf[Double]))
-}
-
-
-/**
- * Trait to force type parameter be specified
- *
- * @author Luka Jacobowitz
- * @see <a href="https://stackoverflow.com/questions/41403287/possible-to-make-scala-require-a-non-nothing-generic-method-parameter-and-return/41403871#41403871">source</a>
- */
-sealed trait NotNothing[-T]
-
-/**
- * Type to force type parameter be specified
- *
- * @author Luka Jacobowitz
- * @see <a href="https://stackoverflow.com/questions/41403287/possible-to-make-scala-require-a-non-nothing-generic-method-parameter-and-return/41403871#41403871">source</a>
- */
-object NotNothing {
-
-	implicit object YoureSupposedToSupplyAType extends NotNothing[Nothing]
-
-	implicit object notNothing extends NotNothing[Any]
-
 }
