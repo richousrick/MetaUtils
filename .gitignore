@@ -1,0 +1,9 @@
+# Project compilation exclude paths
+project/target/
+target/
+
+# Intellij Idea
+.idea/
+
+# SBT
+.bsp/
