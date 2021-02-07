@@ -28,24 +28,40 @@ class ClassUtilitiesTest extends AnyFunSuite {
     assert(convertToPrimitive(classOf[AnotherSubClass]) == classOf[AnotherSubClass])
   }
 
-  test("CompareI primitive incomparable with non primitive") {
-    assert(compareClassI(classOf[Integer], Integer.TYPE) == -2)
-    assert(compareClassI(lang.Boolean.TYPE, classOf[lang.Boolean]) == -2)
+  test("Compare primitive incomparable with non primitive") {
+    assert(compareClass(classOf[Integer], Integer.TYPE, fuzzyPrimitive = false) == -2)
+    assert(compareClass(lang.Boolean.TYPE, classOf[lang.Boolean], fuzzyPrimitive = false) == -2)
   }
 
-  test("CompareI numberPatch works") {
+  test("Compare numberPatch works") {
     // enabled
-    assert(compareClassI(classOf[Number], Integer.TYPE) == 1)
-    assert(compareClassI(Integer.TYPE, classOf[Number]) == -1)
+    assert(compareClass(classOf[Number], Integer.TYPE, fuzzyPrimitive = false) == 1)
+    assert(compareClass(Integer.TYPE, classOf[Number], fuzzyPrimitive = false) == -1)
 
     // disabled
-    assert(compareClassI(classOf[Number], Integer.TYPE, numPrimitivePatch = false) == -2)
-    assert(compareClassI(Integer.TYPE, classOf[Number], numPrimitivePatch = false) == -2)
+    assert(compareClass(classOf[Number], Integer.TYPE, fuzzyPrimitive = false, primitiveInherit = false) == -2)
+    assert(compareClass(Integer.TYPE, classOf[Number], fuzzyPrimitive = false, primitiveInherit = false) == -2)
   }
 
   test("Compare unbox works") {
     assert(compareClass(classOf[Integer], Integer.TYPE) == 0)
     assert(compareClass(lang.Boolean.TYPE, classOf[lang.Boolean]) == 0)
     assert(compareClass(lang.Boolean.TYPE, classOf[Boolean]) == 0)
+  }
+
+  test("Compare works with primitive and Serializable") {
+    assert(compareClass(classOf[Serializable], Integer.TYPE, fuzzyPrimitive = false, primitiveInherit = true) == 1)
+    assert(compareClass(classOf[Serializable], Integer.TYPE, fuzzyPrimitive = false, primitiveInherit = false) == -2)
+  }
+
+  test("Compare works with primitive and Comparable") {
+    assert(compareClass(classOf[Comparable[Integer]],
+      Integer.TYPE,
+      fuzzyPrimitive = false,
+      primitiveInherit = true) == 1)
+    assert(compareClass(classOf[Comparable[Integer]],
+      Integer.TYPE,
+      fuzzyPrimitive = false,
+      primitiveInherit = false) == -2)
   }
 }
