@@ -82,6 +82,76 @@ object InvocationUtilities {
   def findConstructor[C](clazz: Class[C], params: Class[_]*): Option[Constructor[C]] =
     filterExecutables[Constructor[C]](clazz.getConstructors.map(_.asInstanceOf[Constructor[C]]), params: _*)()
 
+  /**
+   * Attempts run a collection of functions on an object.<br>
+   * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
+   *
+   * @param instance object to start running the functions on
+   * @param funcList list of parameterless functions to run in series, separated by full stops
+   * @param params   parameters for the last function, if any.
+   * @param rt       ClassTag for type R
+   * @tparam R return type
+   * @throws NoSuchMethodError if any of the desired methods cannot be found.
+   * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
+   *         None otherwise
+   */
+  def runChain[R](instance: AnyRef, funcList: String, params: Any*)(implicit rt: ClassTag[R]): R =
+    runChainOpt[R](instance, funcList, params: _*)(rt) match {
+      case Some(r) => r
+      case None => throw new NoSuchMethodError()
+    }
+
+  /**
+   * Attempts run a collection of functions on an object.<br>
+   * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
+   *
+   * @param instance object to start running the functions on
+   * @param funcList list of parameterless functions to run in series, separated by full stops
+   * @param params   parameters for the last function, if any.
+   * @param rt       ClassTag for type R
+   * @tparam R return type
+   * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
+   *         None otherwise
+   */
+  def runChainOpt[R](instance: AnyRef, funcList: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
+    params match {
+      // if no params are supplied then all functions are parameterless, so analogous to internal chainRun.
+      case Seq() => chainRun[R](instance, funcList.split('.'): _*)
+      case _ =>
+        // if params exist then the last function is not parameterless, so call chainRun using all but the last function call.
+        val funcs = funcList.split('.')
+        chainRun[Any](instance, funcs.dropRight(1): _*) match {
+          case Some(r) =>
+            // Attempt to call runOpt on the result calling the last specified method using the parameters provided
+            runOpt[R](r.asInstanceOf[AnyRef], funcs.last, params: _*)
+          case None => None
+        }
+    }
+
+  /**
+   * Internal method,<br>
+   * Attempts to run a series of functions on an object. <br>
+   * i.e. chainRun(instance, "f1", "f2", "f3") => instance.f1().f2().f3()
+   *
+   * @param instance object to start running the functions on
+   * @param funcs    list of functions to run in order
+   * @param rt       type tag for return type
+   * @tparam R type of the desired return type
+   * @return the result of running the collection of functions if possible
+   * @see [[com.richousrick.metautils.utils.InvocationUtilities#runChainOpt(java.lang.Object, java.lang.String, scala.collection.immutable.Seq, scala.reflect.ClassTag) runChainOpt]]
+   *      the publicly visible version of this function
+   */
+  private def chainRun[R](instance: AnyRef, funcs: String*)(implicit rt: ClassTag[R]): Option[R] =
+    Some(funcs.foldLeft[Any](instance) { (currRet: Any, func: String) =>
+      // try to find and run the desired function on the current object.
+      // If said function was ran succefully then update the current object with its return.
+      // If the function could not be found then return None.
+      runOpt[Any](currRet.asInstanceOf[AnyRef], func) match {
+        case Some(v) => v
+        case None => return None
+      }
+      // If the function list reduced to an object, then all function calls were successful, so return the result.
+    }.asInstanceOf[R])
 
   /**
    * Attempts to run the specified method.<br>

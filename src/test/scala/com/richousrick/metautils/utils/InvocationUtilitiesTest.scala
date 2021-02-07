@@ -170,14 +170,28 @@ class InvocationUtilitiesTest extends AnyFunSuite with BeforeAndAfterAll {
     assertThrows[InstantiationException](build[SomeClass]("Hello"))
     assertThrows[InstantiationException](build[SomeClass]('?'))
   }
+
+  test("runChain works with multiple function calls and parameters") {
+    assert(runChain(new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Integer"))
+    assert(!runChain[Boolean](new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Intege"))
+  }
+
+  test("runChain works with multiple parameterless function calls") {
+    // type required as cannot be inferred
+    assert(runChain[String](new SomeClass(-12), "num.intValue.getClass.getName") == "java.lang.Integer")
+  }
+
+  test("runChain works with a single function call") {
+    assert(runChain[String](new SomeClass(-12), "kind") == "Int")
+  }
 }
 
 /**
  * Class with multiple constructors used to test
- * [[com.richousrick.metautils.utils.InvocationUtilities$#build(scala.collection.immutable.Seq, scala.reflect.ClassTag) build]]
+ * [[com.richousrick.metautils.utils.InvocationUtilities#build(scala.collection.immutable.Seq, scala.reflect.ClassTag) build]]
  * on types with polymorphic constructors
  */
-class SomeClass private(num: Number, kind: String) {
+class SomeClass private(val num: Number, val kind: String) {
 
   def this(i: Int) = this(i, "Int")
 
