@@ -17,8 +17,8 @@ run[R](instance: AnyRef, funcName: String, params: Any*): R
 // i.e. runChain(myVar, "f1.f2.f3", params) => myVar.f1().f2().f3(params)
 runChain[R](instance: AnyRef, funcList: String, params: Any*): R
 ```
-Note: If either of these methods cannot find the desired method / constructor, they will throw Exceptions. 
-If this is not desirable, both have versions that return Options instead. These can be called by appending 'Opt' to the desired methods name. e.g. runOpt 
+Note: If any of these methods cannot find the desired method / constructor, they will throw Exceptions. 
+If this is not desirable, they all have versions that return Options instead. These can be called by appending 'Opt' to the desired methods name. e.g. runOpt 
 
 
 #### Example Usage:
