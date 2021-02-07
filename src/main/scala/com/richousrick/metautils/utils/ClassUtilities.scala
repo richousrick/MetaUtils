@@ -3,7 +3,7 @@ package com.richousrick.metautils.utils
 import scala.util.Try
 
 /**
- * Collection of
+ * Collection of utility functions to help working with functions
  */
 object ClassUtilities {
 

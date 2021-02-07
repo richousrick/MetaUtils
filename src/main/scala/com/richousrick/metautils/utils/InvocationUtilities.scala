@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 /**
- * A collection of utilities focusing around invoking methods and
+ * A collection of utilities focusing around invoking methods and constructors of types not known at compile time.
  */
 object InvocationUtilities {
 
