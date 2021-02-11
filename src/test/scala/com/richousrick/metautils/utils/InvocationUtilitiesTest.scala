@@ -1,16 +1,14 @@
 package com.richousrick.metautils.utils
 
 import com.richousrick.metautils.utils.InvocationUtilities._
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
-class InvocationUtilitiesTest extends AnyFunSuite with BeforeAndAfterAll {
+/**
+ * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#findFunction findFunction]] methods
+ */
+class FindMethodSuite extends AnyFunSuite {
   // Use forName to mix usages between Java and scala class references
   val exampleClass: Class[_] = Class.forName("com.richousrick.metautils.utils.MetaUtilsTestExample")
-
-  override def beforeAll(): Unit = {
-    assert(exampleClass != null)
-  }
 
   test("Find method returns Some for methods that exist") {
     val desiredMethod = exampleClass.getMethod("isSubClass", classOf[SuperClass], classOf[Int])
@@ -107,8 +105,55 @@ class InvocationUtilitiesTest extends AnyFunSuite with BeforeAndAfterAll {
       classOf[Boolean],
       classOf[AnotherSubClass]).isEmpty)
   }
+}
 
-  test("Build, Get, Run method are callable") {
+/**
+ * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#build build]] methods
+ */
+class BuildSuite extends AnyFunSuite {
+  test("Build new instance: TypeTag reference") {
+    // call parameterless constructor, using generic type referencing
+    val sc: SubClass = build[SubClass]()
+    assert(sc != null)
+    assert(sc.isInstanceOf[SubClass])
+    assert(sc.isInstanceOf[SuperClass])
+
+
+    // call object constructor that takes parameters, using generic type referencing
+    val as: AnotherSubClass = build[AnotherSubClass](5)
+    assert(as != null)
+    assert(as.isInstanceOf[AnotherSubClass])
+    assert(as.isInstanceOf[SuperClass])
+    assert(as.ID == 5)
+
+    // call non-existent constructor, using generic type referencing
+    assertThrows[InstantiationException](build[AnotherSubClass]("hello"))
+  }
+
+  test("Build new instance: Class reference") {
+    // call parameterless constructor, using class parameter referencing
+    val sc = build(classOf[SubClass])
+    assert(sc != null)
+    assert(sc.isInstanceOf[SubClass])
+    assert(sc.isInstanceOf[SuperClass])
+
+    // call object constructor that takes parameters, using class parameter referencing
+    val as = build(classOf[AnotherSubClass], 6)
+    assert(as != null)
+    assert(as.isInstanceOf[AnotherSubClass])
+    assert(as.isInstanceOf[SuperClass])
+    assert(as.ID == 6)
+
+    // call non-existent constructor, using class parameter referencing
+    assertThrows[InstantiationException](build(classOf[SubClass], "hello"))
+  }
+}
+
+/**
+ * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#run run]] methods
+ */
+class RunSuite extends AnyFunSuite {
+  test("Run method works irregardless of return type specification") {
     val mte = new MetaUtilsTestExample
     val sc = new SubClass
 
@@ -118,59 +163,19 @@ class InvocationUtilitiesTest extends AnyFunSuite with BeforeAndAfterAll {
 
     // run function with return type
     assert(!InvocationUtilities.run[Boolean](mte, "isSubClass", new AnotherSubClass(1), 0))
+  }
 
-    // run non existent function
+  test("Run non existant method throws NoSuchMethodError") {
+    val mte = new MetaUtilsTestExample
     assertThrows[NoSuchMethodError](InvocationUtilities.run[Boolean](mte, "NoSuchMethod"))
     assertThrows[NoSuchMethodError](InvocationUtilities.run(mte, "NoSuchMethod"))
   }
+}
 
-  test("Build new instance with generic type specification") {
-    // build parameterless with generic type specification
-    val sc: SubClass = build[SubClass]()
-    assert(sc != null)
-    assert(sc.isInstanceOf[SubClass])
-    assert(sc.isInstanceOf[SuperClass])
-
-
-    // build with parameters with generic type specification
-    val as: AnotherSubClass = build[AnotherSubClass](5)
-    assert(as != null)
-    assert(as.isInstanceOf[AnotherSubClass])
-    assert(as.isInstanceOf[SuperClass])
-    assert(as.ID == 5)
-
-    assertThrows[InstantiationException](build[AnotherSubClass]("hello"))
-  }
-
-  test("Build new instance with class type specification") {
-    // build parameterless with class instance parameter
-    val sc = build(classOf[SubClass])
-    assert(sc != null)
-    assert(sc.isInstanceOf[SubClass])
-    assert(sc.isInstanceOf[SuperClass])
-
-    // build with parameters with class instance parameter
-    val as = build(classOf[AnotherSubClass], 6)
-    assert(as != null)
-    assert(as.isInstanceOf[AnotherSubClass])
-    assert(as.isInstanceOf[SuperClass])
-    assert(as.ID == 6)
-
-    assertThrows[InstantiationException](build(classOf[SubClass], "hello"))
-  }
-
-  test("Mix build and run functions") {
-    assert(InvocationUtilities.run(build[MetaUtilsTestExample](), "isSubClass", build(classOf[SubClass])))
-  }
-
-  test("Primitive types are comparable with Number") {
-    assert(build[SomeClass](1).toString == "Int(1)")
-    assert(build[SomeClass](1f).toString == "Float(1.0)")
-    assert(build[SomeClass](1d).toString == "Misc(1.0)")
-    assertThrows[InstantiationException](build[SomeClass]("Hello"))
-    assertThrows[InstantiationException](build[SomeClass]('?'))
-  }
-
+/**
+ * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#runChain runChain]] methods
+ */
+class RunChainSuite extends AnyFunSuite {
   test("runChain works with multiple function calls and parameters") {
     assert(runChain(new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Integer"))
     assert(!runChain[Boolean](new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Intege"))
@@ -183,6 +188,24 @@ class InvocationUtilitiesTest extends AnyFunSuite with BeforeAndAfterAll {
 
   test("runChain works with a single function call") {
     assert(runChain[String](new SomeClass(-12), "kind") == "Int")
+  }
+}
+
+/**
+ * Tests that apply to multiple functions
+ */
+class GeneralSuite extends AnyFunSuite {
+  test("Mix build and run functions") {
+    assert(InvocationUtilities.run(build[MetaUtilsTestExample](), "isSubClass", build(classOf[SubClass])))
+  }
+
+  test("Primitive numeric types can be used for Number parameters") {
+    assert(build[SomeClass](new Integer(1)).toString == "Int(1)")
+    assert(build[SomeClass](1).toString == "Int(1)")
+    assert(build[SomeClass](1f).toString == "Float(1.0)")
+    assert(build[SomeClass](1d).toString == "Misc(1.0)")
+    assertThrows[InstantiationException](build[SomeClass]("Hello"))
+    assertThrows[InstantiationException](build[SomeClass]('?'))
   }
 }
 
