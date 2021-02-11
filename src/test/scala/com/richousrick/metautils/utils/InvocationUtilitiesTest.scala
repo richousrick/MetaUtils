@@ -160,15 +160,21 @@ class RunSuite extends AnyFunSuite {
     // run function without return type
     assert(InvocationUtilities.run(mte, "isSubClass", sc))
 
-
     // run function with return type
+    // generic
     assert(!InvocationUtilities.run[Boolean](mte, "isSubClass", new AnotherSubClass(1), 0))
+    // class provided
+    assert(!InvocationUtilities.run(classOf[Boolean], mte, "isSubClass", new AnotherSubClass(1), 0))
   }
 
   test("Run non existant method throws NoSuchMethodError") {
     val mte = new MetaUtilsTestExample
-    assertThrows[NoSuchMethodError](InvocationUtilities.run[Boolean](mte, "NoSuchMethod"))
+    // inferred type
     assertThrows[NoSuchMethodError](InvocationUtilities.run(mte, "NoSuchMethod"))
+    // generic specified type
+    assertThrows[NoSuchMethodError](InvocationUtilities.run[Boolean](mte, "NoSuchMethod"))
+    // provided type
+    assertThrows[NoSuchMethodError](InvocationUtilities.run(classOf[Boolean], mte, "NoSuchMethod"))
   }
 }
 
@@ -179,15 +185,18 @@ class RunChainSuite extends AnyFunSuite {
   test("runChain works with multiple function calls and parameters") {
     assert(runChain(new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Integer"))
     assert(!runChain[Boolean](new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Intege"))
+    assert(!runChain(classOf[Boolean], new SomeClass(-12), "num.intValue.getClass.getName.equals", "java.lang.Intege"))
   }
 
   test("runChain works with multiple parameterless function calls") {
     // type required as cannot be inferred
     assert(runChain[String](new SomeClass(-12), "num.intValue.getClass.getName") == "java.lang.Integer")
+    assert(runChain(classOf[String], new SomeClass(-12), "num.intValue.getClass.getName") == "java.lang.Integer")
   }
 
   test("runChain works with a single function call") {
     assert(runChain[String](new SomeClass(-12), "kind") == "Int")
+    assert(runChain(classOf[String], new SomeClass(-12), "kind") == "Int")
   }
 }
 

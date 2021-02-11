@@ -12,6 +12,7 @@ import scala.reflect.ClassTag
  */
 object InvocationUtilities {
 
+
   /**
    * Attempts to call 'new C(params)', and get the created object.<br>
    * Note: This function requires the type parameter to be specified. See
@@ -25,7 +26,7 @@ object InvocationUtilities {
    * @return the created object
    */
   def build[C](params: Any*)(implicit rt: ClassTag[C]): C =
-    buildOpt[C](params: _*) match {
+    buildOpt[C](params: _*)(rt) match {
       case Some(c) => c
       case None => throw new InstantiationException("Constructor not found")
     }
@@ -57,6 +58,8 @@ object InvocationUtilities {
    * @return the created object if successful, None otherwise.
    */
   def buildOpt[C](params: Any*)(implicit rt: ClassTag[C]): Option[C] =
+  // As type specification must be present, the class can be extracted from it.
+  // This is not the case with other functions that allow their types to be inferred
     buildOpt[C](rt.runtimeClass.asInstanceOf[Class[C]], params: _*)
 
   /**
@@ -82,6 +85,107 @@ object InvocationUtilities {
   def findConstructor[C](clazz: Class[C], params: Class[_]*): Option[Constructor[C]] =
     filterExecutables[Constructor[C]](clazz.getConstructors.map(_.asInstanceOf[Constructor[C]]), params: _*)()
 
+
+  /**
+   * Attempts to run the specified method.
+   *
+   * @param clazz    the type to return
+   * @param instance , Object to call the desired method on
+   * @param funcName , name of the function to call
+   * @param params   , parameters of the desired function
+   * @tparam R , return type
+   * @throws NoSuchMethodError , if the desired method cannot be found.
+   * @return the result of calling the desired method
+   * @see [[com.richousrick.metautils.utils.InvocationUtilities#runOption]]
+   */
+  def run[R](clazz: Class[R], instance: AnyRef, funcName: String, params: Any*): R =
+    runOpt[R](clazz, instance, funcName, params: _*) match {
+      case Some(r) => r
+      case None => throw new NoSuchMethodError()
+    }
+
+  /**
+   * Attempts to run the specified method.<br>
+   * Note: Generic mode will be enabled if the type is not specified
+   * i.e.
+   * {{{	runFunc[returnType](...)
+   * 	or
+   * 	runFunc(...)(implicitly[ClassTag[returnType]])}}}
+   * This means return type will not be used in filtering methods, and may lead to ClassCastExceptions on use
+   *
+   * @param instance , Object to call the desired method on
+   * @param funcName , name of the function to call
+   * @param params   , parameters of the desired function
+   * @param rt       , ClassTag for type R
+   * @tparam R , return type
+   * @throws NoSuchMethodError , if the desired method cannot be found.
+   * @return the result of calling the desired method
+   * @see [[com.richousrick.metautils.utils.InvocationUtilities#runOption]]
+   */
+  def run[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): R =
+    runOpt[R](instance, funcName, params: _*)(rt) match {
+      case Some(r) => r
+      case None => throw new NoSuchMethodError()
+    }
+
+  /**
+   * Attempts to run the specified method.
+   *
+   * @param clazz    the type to return
+   * @param instance , Object to call the desired method on
+   * @param funcName , name of the function to call
+   * @param params   , parameters of the desired function
+   * @tparam R , return type
+   * @return Some(instance.funcName(params)), if such a function exists. None otherwise
+   */
+  def runOpt[R](clazz: Class[R], instance: AnyRef, funcName: String, params: Any*): Option[R] =
+    getGenericFunction(instance,
+      funcName,
+      clazz,
+      params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*)(allowGenericReturns = false).map(_ (params))
+
+  /**
+   * Attempts to run the specified method.<br>
+   * Note: Generic mode will be enabled if the type is not specified
+   * i.e.
+   * {{{	runFunc[returnType](...)
+   * 	or
+   * 	runFunc(...)(implicitly[ClassTag[returnType]])}}}
+   * This means return type will not be used in filtering methods, and may lead to ClassCastExceptions on use
+   *
+   * @param instance , Object to call the desired method on
+   * @param funcName , name of the function to call
+   * @param params   , parameters of the desired function
+   * @param rt       , ClassTag for type R
+   * @tparam R , return type
+   * @return Some(instance.funcName(params)), if such a function exists. None otherwise
+   */
+  def runOpt[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
+    getGenericFunction(instance,
+      funcName,
+      rt.runtimeClass.asInstanceOf[Class[R]],
+      params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*)(allowGenericReturns = true).map(_ (params))
+
+
+  /**
+   * Attempts run a collection of functions on an object.<br>
+   * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
+   *
+   * @param clazz    the return type
+   * @param instance object to start running the functions on
+   * @param funcList list of parameterless functions to run in series, separated by full stops
+   * @param params   parameters for the last function, if any.
+   * @tparam R return type
+   * @throws NoSuchMethodError if any of the desired methods cannot be found.
+   * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
+   *         None otherwise
+   */
+  def runChain[R](clazz: Class[R], instance: AnyRef, funcList: String, params: Any*): R =
+    runChainOpt[R](clazz, instance, funcList, params: _*) match {
+      case Some(r) => r
+      case None => throw new NoSuchMethodError()
+    }
+
   /**
    * Attempts run a collection of functions on an object.<br>
    * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
@@ -105,6 +209,33 @@ object InvocationUtilities {
    * Attempts run a collection of functions on an object.<br>
    * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
    *
+   * @param clazz    return type of the function
+   * @param instance object to start running the functions on
+   * @param funcList list of parameterless functions to run in series, separated by full stops
+   * @param params   parameters for the last function, if any.
+   * @tparam R return type
+   * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
+   *         None otherwise
+   */
+  def runChainOpt[R](clazz: Class[R], instance: AnyRef, funcList: String, params: Any*): Option[R] =
+    params match {
+      // if no params are supplied then all functions are parameterless, so analogous to internal chainRun.
+      case Seq() => chainRun[R](instance, funcList.split('.'): _*)(ClassTag(clazz))
+      case _ =>
+        // if params exist then the last function is not parameterless, so call chainRun using all but the last function call.
+        val funcs = funcList.split('.')
+        chainRun[Any](instance, funcs.dropRight(1): _*) match {
+          case Some(r) =>
+            // Attempt to call runOpt on the result calling the last specified method using the parameters provided
+            runOpt[R](clazz, r.asInstanceOf[AnyRef], funcs.last, params: _*)
+          case None => None
+        }
+    }
+
+  /**
+   * Attempts run a collection of functions on an object.<br>
+   * i.e. runChainOpt(instance, "f1.f2.f3", param1, param2) => instance.f1().f2().f3(param1, param2)
+   *
    * @param instance object to start running the functions on
    * @param funcList list of parameterless functions to run in series, separated by full stops
    * @param params   parameters for the last function, if any.
@@ -116,7 +247,7 @@ object InvocationUtilities {
   def runChainOpt[R](instance: AnyRef, funcList: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
     params match {
       // if no params are supplied then all functions are parameterless, so analogous to internal chainRun.
-      case Seq() => chainRun[R](instance, funcList.split('.'): _*)
+      case Seq() => chainRun[R](instance, funcList.split('.'): _*)(rt)
       case _ =>
         // if params exist then the last function is not parameterless, so call chainRun using all but the last function call.
         val funcs = funcList.split('.')
@@ -152,52 +283,6 @@ object InvocationUtilities {
       }
       // If the function list reduced to an object, then all function calls were successful, so return the result.
     }.asInstanceOf[R])
-
-  /**
-   * Attempts to run the specified method.<br>
-   * Note: Generic mode will be enabled if the type is not specified
-   * i.e.
-   * {{{	runFunc[returnType](...)
-   * 	or
-   * 	runFunc(...)(implicitly[ClassTag[returnType]])}}}
-   * This means return type will not be used in filtering methods, and may lead to ClassCastExceptions on use
-   *
-   * @param instance , Object to call the desired method on
-   * @param funcName , name of the function to call
-   * @param params   , parameters of the desired function
-   * @param rt       , ClassTag for type R
-   * @tparam R , return type
-   * @throws NoSuchMethodError , if the desired method cannot be found.
-   * @return the result of calling the desired method
-   * @see [[com.richousrick.metautils.utils.InvocationUtilities#runOption]]
-   */
-  def run[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): R =
-    runOpt[R](instance, funcName, params: _*) match {
-      case Some(r) => r
-      case None => throw new NoSuchMethodError()
-    }
-
-  /**
-   * Attempts to run the specified method.<br>
-   * Note: Generic mode will be enabled if the type is not specified
-   * i.e.
-   * {{{	runFunc[returnType](...)
-   * 	or
-   * 	runFunc(...)(implicitly[ClassTag[returnType]])}}}
-   * This means return type will not be used in filtering methods, and may lead to ClassCastExceptions on use
-   *
-   * @param instance , Object to call the desired method on
-   * @param funcName , name of the function to call
-   * @param params   , parameters of the desired function
-   * @param rt       , ClassTag for type R
-   * @tparam R , return type
-   * @return Some(instance.funcName(params)), if such a function exists. None otherwise
-   */
-  def runOpt[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
-    getGenericFunction(instance,
-      funcName,
-      rt.runtimeClass.asInstanceOf[Class[R]],
-      params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*)(allowGenericReturns = true).map(_ (params))
 
 
   /**
