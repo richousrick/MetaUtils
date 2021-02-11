@@ -402,7 +402,7 @@ object InvocationUtilities {
   // call search functions on the classes methods, also filtering by their name and returns
     filterExecutables(clazz.getMethods, params: _*)(Seq[Method => Boolean](_.getName == funcName) ++ (
       if (!allowGenericReturns)
-        Some[Method => Boolean](_.getReturnType.isAssignableFrom(returnType))
+        Some[Method => Boolean](f => compareClass(f.getReturnType, returnType) >= 0)
       else None))
 
 
