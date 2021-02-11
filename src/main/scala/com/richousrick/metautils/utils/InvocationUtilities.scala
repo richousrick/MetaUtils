@@ -98,7 +98,7 @@ object InvocationUtilities {
    * @return the result of calling the desired method
    * @see [[com.richousrick.metautils.utils.InvocationUtilities#runOption]]
    */
-  def run[R](clazz: Class[R], instance: AnyRef, funcName: String, params: Any*): R =
+  def run[R](clazz: Class[R], instance: Any, funcName: String, params: Any*): R =
     runOpt[R](clazz, instance, funcName, params: _*) match {
       case Some(r) => r
       case None => throw new NoSuchMethodError()
@@ -122,7 +122,7 @@ object InvocationUtilities {
    * @return the result of calling the desired method
    * @see [[com.richousrick.metautils.utils.InvocationUtilities#runOption]]
    */
-  def run[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): R =
+  def run[R](instance: Any, funcName: String, params: Any*)(implicit rt: ClassTag[R]): R =
     runOpt[R](instance, funcName, params: _*)(rt) match {
       case Some(r) => r
       case None => throw new NoSuchMethodError()
@@ -138,7 +138,7 @@ object InvocationUtilities {
    * @tparam R , return type
    * @return Some(instance.funcName(params)), if such a function exists. None otherwise
    */
-  def runOpt[R](clazz: Class[R], instance: AnyRef, funcName: String, params: Any*): Option[R] =
+  def runOpt[R](clazz: Class[R], instance: Any, funcName: String, params: Any*): Option[R] =
     getGenericFunction(instance,
       funcName,
       clazz,
@@ -160,7 +160,7 @@ object InvocationUtilities {
    * @tparam R , return type
    * @return Some(instance.funcName(params)), if such a function exists. None otherwise
    */
-  def runOpt[R](instance: AnyRef, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
+  def runOpt[R](instance: Any, funcName: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
     getGenericFunction(instance,
       funcName,
       rt.runtimeClass.asInstanceOf[Class[R]],
@@ -180,7 +180,7 @@ object InvocationUtilities {
    * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
    *         None otherwise
    */
-  def runChain[R](clazz: Class[R], instance: AnyRef, funcList: String, params: Any*): R =
+  def runChain[R](clazz: Class[R], instance: Any, funcList: String, params: Any*): R =
     runChainOpt[R](clazz, instance, funcList, params: _*) match {
       case Some(r) => r
       case None => throw new NoSuchMethodError()
@@ -199,7 +199,7 @@ object InvocationUtilities {
    * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
    *         None otherwise
    */
-  def runChain[R](instance: AnyRef, funcList: String, params: Any*)(implicit rt: ClassTag[R]): R =
+  def runChain[R](instance: Any, funcList: String, params: Any*)(implicit rt: ClassTag[R]): R =
     runChainOpt[R](instance, funcList, params: _*)(rt) match {
       case Some(r) => r
       case None => throw new NoSuchMethodError()
@@ -217,7 +217,7 @@ object InvocationUtilities {
    * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
    *         None otherwise
    */
-  def runChainOpt[R](clazz: Class[R], instance: AnyRef, funcList: String, params: Any*): Option[R] =
+  def runChainOpt[R](clazz: Class[R], instance: Any, funcList: String, params: Any*): Option[R] =
     params match {
       // if no params are supplied then all functions are parameterless, so analogous to internal chainRun.
       case Seq() => chainRun[R](instance, funcList.split('.'): _*)(ClassTag(clazz))
@@ -227,7 +227,7 @@ object InvocationUtilities {
         chainRun[Any](instance, funcs.dropRight(1): _*) match {
           case Some(r) =>
             // Attempt to call runOpt on the result calling the last specified method using the parameters provided
-            runOpt[R](clazz, r.asInstanceOf[AnyRef], funcs.last, params: _*)
+            runOpt[R](clazz, r, funcs.last, params: _*)
           case None => None
         }
     }
@@ -244,7 +244,7 @@ object InvocationUtilities {
    * @return Some(instance.funcList(params)), if the functions in funcList exist and are applicable to the previous's return type.
    *         None otherwise
    */
-  def runChainOpt[R](instance: AnyRef, funcList: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
+  def runChainOpt[R](instance: Any, funcList: String, params: Any*)(implicit rt: ClassTag[R]): Option[R] =
     params match {
       // if no params are supplied then all functions are parameterless, so analogous to internal chainRun.
       case Seq() => chainRun[R](instance, funcList.split('.'): _*)(rt)
@@ -254,7 +254,7 @@ object InvocationUtilities {
         chainRun[Any](instance, funcs.dropRight(1): _*) match {
           case Some(r) =>
             // Attempt to call runOpt on the result calling the last specified method using the parameters provided
-            runOpt[R](r.asInstanceOf[AnyRef], funcs.last, params: _*)
+            runOpt[R](r, funcs.last, params: _*)
           case None => None
         }
     }
@@ -272,12 +272,12 @@ object InvocationUtilities {
    * @see [[com.richousrick.metautils.utils.InvocationUtilities#runChainOpt(java.lang.Object, java.lang.String, scala.collection.immutable.Seq, scala.reflect.ClassTag) runChainOpt]]
    *      the publicly visible version of this function
    */
-  private def chainRun[R](instance: AnyRef, funcs: String*)(implicit rt: ClassTag[R]): Option[R] =
+  private def chainRun[R](instance: Any, funcs: String*)(implicit rt: ClassTag[R]): Option[R] =
     Some(funcs.foldLeft[Any](instance) { (currRet: Any, func: String) =>
       // try to find and run the desired function on the current object.
       // If said function was ran succefully then update the current object with its return.
       // If the function could not be found then return None.
-      runOpt[Any](currRet.asInstanceOf[AnyRef], func) match {
+      runOpt[Any](currRet, func) match {
         case Some(v) => v
         case None => return None
       }
