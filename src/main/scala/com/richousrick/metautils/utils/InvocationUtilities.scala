@@ -6,12 +6,78 @@ import com.richousrick.metautils.utils.ClassUtilities.compareClass
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
+import scala.util.Try
 
 /**
  * A collection of utilities focusing around invoking methods and constructors of types not known at compile time.
  */
 object InvocationUtilities {
 
+  /**
+   * Attempts to get a public field from a given instance object.
+   *
+   * @param instance object to get the field of.
+   *                 If referencing a static field the class may be supplied instead of an instance.
+   * @param name     name of the desired field
+   * @param rt       type tag representing the desired return type
+   * @tparam R expected datatype of the field
+   * @throws NoSuchFieldError if the desired field does not exsist or is not publicly visible
+   * @return the value of the field in the given instance if it is publicly accessible
+   */
+  def get[R](instance: Any, name: String)(implicit rt: ClassTag[R]): R =
+    getOpt[R](instance, name)(rt) match {
+      case Some(r) => r
+      case None => throw new NoSuchFieldError()
+    }
+
+  /**
+   * Attempts to get a public field from a given instance object.
+   *
+   * @param clazz    class referencing the return type R
+   * @param instance object to get the field of.
+   *                 If referencing a static field the class may be supplied instead of an instance.
+   * @param name     name of the desired field
+   * @tparam R expected datatype of the field
+   * @throws NoSuchFieldError if the desired field does not exsist or is not publicly visible
+   * @return the value of the field in the given instance if it is publicly accessible
+   */
+  def get[R](clazz: Class[R], instance: Any, name: String): R =
+    getOpt[R](clazz, instance, name) match {
+      case Some(r) => r
+      case None => throw new NoSuchFieldError()
+    }
+
+  /**
+   * Attempts to get a public field from a given instance object.
+   *
+   * @param instance object to get the field of.
+   *                 If referencing a static field the class may be supplied instead of an instance.
+   * @param name     name of the desired field
+   * @param rt       type tag representing the desired return type
+   * @tparam R expected datatype of the field
+   * @return the value of the field in the given instance if it is publicly accessible, None otherwise
+   */
+  def getOpt[R](instance: Any, name: String)(implicit rt: ClassTag[R]): Option[R] =
+    Try((instance match {
+      case value: Class[_] => value
+      case _ => instance.getClass
+    }).getField(name)).toOption.map(_.get(instance).asInstanceOf[R])
+
+  /**
+   * Attempts to get a public field from a given instance object.
+   *
+   * @param clazz    class referencing the return type R
+   * @param instance object to get the field of.
+   *                 If referencing a static field the class may be supplied instead of an instance.
+   * @param name     name of the desired field
+   * @tparam R expected datatype of the field
+   * @return the value of the field in the given instance if it is publicly accessible, None otherwise
+   */
+  def getOpt[R](clazz: Class[R], instance: Any, name: String): Option[R] =
+    Try((instance match {
+      case value: Class[_] => value
+      case _ => instance.getClass
+    }).getField(name)).toOption.map(_.get(instance).asInstanceOf[R])
 
   /**
    * Attempts to call 'new C(params)', and get the created object.<br>

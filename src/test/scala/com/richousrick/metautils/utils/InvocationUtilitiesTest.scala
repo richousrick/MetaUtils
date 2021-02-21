@@ -1,5 +1,8 @@
 package com.richousrick.metautils.utils
 
+import java.awt.Point
+import java.lang.reflect.Modifier
+
 import com.richousrick.metautils.utils.InvocationUtilities._
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -197,6 +200,36 @@ class RunChainSuite extends AnyFunSuite {
   test("runChain works with a single function call") {
     assert(runChain[String](new SomeClass(-12), "kind") == "Int")
     assert(runChain(classOf[String], new SomeClass(-12), "kind") == "Int")
+  }
+}
+
+/**
+ * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#get get]] methods
+ */
+class GetSuite extends AnyFunSuite {
+  /*TODO: Expand get methods to support:
+     Private variables, (including those inherited)
+   */
+
+  test("Can get Static fields using class instance") {
+    assert(get[Class[_]](classOf[Integer], "TYPE") == Integer.TYPE)
+  }
+
+  test("Can get accessible fields") {
+    val p = new Point(1, 2)
+    assert(Modifier.isPublic(p.getClass.getDeclaredField("x").getModifiers))
+    assert(Modifier.isPublic(p.getClass.getDeclaredField("y").getModifiers))
+    assert(get[Int](p, "x") == 1)
+    assert(get[Int](p, "y") == 2)
+    assert(p.x == 1)
+    assert(p.y == 2)
+  }
+
+  test("Cannot get private fields") {
+    // field exists but is private
+    assert(Modifier.isPrivate(classOf[SomeClass].getDeclaredField("kind").getModifiers))
+    // cannot get it
+    assert(getOpt[String](new SomeClass(1), "kind").isEmpty)
   }
 }
 
