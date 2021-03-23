@@ -64,7 +64,7 @@ val floatClass = build(classOf[SomeClass], 2.5f)
 // val doubleNum: Double = new SomeClass(2.5d).num
 val doubleNum = build[SomeClass](2.5d).num
 
-// val d: Double = num.doubleValue
+// val d: Double = doubleNum.doubleValue
 val d = run[Double](doubleNum, "doubleValue")
 
 // type resolved via context
