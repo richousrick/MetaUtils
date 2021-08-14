@@ -20,20 +20,11 @@ class ByteArrayClassLoader private(var classDefs: mutable.Map[String, Array[Byte
    */
   def this(classDefs: Map[String, Array[Byte]], parent: ClassLoader) = this(mutable.Map(classDefs.toSeq: _*), parent)
 
-  /**
-   * Classes that have already been defined via findClass
-   */
-  private val definedClasses: mutable.Map[String, Class[_]] = mutable.Map()
 
   override protected def findClass(name: String): Class[_] =
-    if (definedClasses.contains(name))
-      definedClasses(name)
-    else
       classDefs.remove(name) match {
         case Some(cd) =>
-          definedClasses += name -> defineClass(name, cd, 0, cd.length)
-          definedClasses(name)
-
+          defineClass(name, cd, 0, cd.length)
         case None => null
       }
 }

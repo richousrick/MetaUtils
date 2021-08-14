@@ -1,9 +1,8 @@
 package com.richousrick.metautils.utils
 
-import java.lang.reflect.{Constructor, Executable, Method}
-
 import com.richousrick.metautils.utils.ClassUtilities.compareClass
 
+import java.lang.reflect.{Constructor, Executable, Method}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -354,24 +353,6 @@ object InvocationUtilities {
   /**
    * Attempts to create a function literal representing calling the desired function the the specified instance
    *
-   * @param instance   the object the desired function should be called on
-   * @param funcName   name of the desired function
-   * @param returnType return type of the desired function
-   * @param params     arguments the desired function takes
-   * @tparam C type of the object the function is called on
-   * @tparam R type of data the function should return
-   * @tparam P base type of data the parameters take.
-   * @return a function literal representing the desired function, if one was found
-   */
-  def getFunction[C, R, P](instance: C,
-                           funcName: String,
-                           returnType: Class[R],
-                           params: Class[P]*): Option[Seq[P] => R] =
-    getGenericFunction(instance, funcName, returnType, params: _*)(allowGenericReturns = false)
-
-  /**
-   * Attempts to create a function literal representing calling the desired function the the specified instance
-   *
    * @param instance            the object the desired function should be called on
    * @param funcName            name of the desired function
    * @param returnType          return type of the desired function
@@ -388,24 +369,6 @@ object InvocationUtilities {
       allowGenericReturns).map(f =>
       (p: Seq[P]) => f(instance, p)
     )
-
-  /**
-   * Attempts to create a function literal that will allow the desired function to be invoked
-   *
-   * @param clazz      instance the method is called on
-   * @param funcName   name of the desired function
-   * @param returnType return type of the desired function
-   * @param params     arguments the desired function takes
-   * @tparam C type of the object the function is called on
-   * @tparam R type of data the function should return
-   * @tparam P base type of data the parameters take.
-   * @return a function literal that allows the desired function to be invoked, if such a function was found.
-   */
-  def buildFunction[C, R, P](clazz: Class[C],
-                             funcName: String,
-                             returnType: Class[R],
-                             params: Class[P]*): Option[(C, Seq[P]) => R] =
-    buildGenericFunction(clazz, funcName, returnType, params: _*)(allowGenericReturns = false)
 
   /**
    * Attempts to create a function literal that will allow the desired function to be invoked

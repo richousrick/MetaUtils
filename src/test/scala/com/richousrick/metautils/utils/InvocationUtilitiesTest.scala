@@ -1,10 +1,10 @@
 package com.richousrick.metautils.utils
 
-import java.awt.Point
-import java.lang.reflect.Modifier
-
 import com.richousrick.metautils.utils.InvocationUtilities._
 import org.scalatest.funsuite.AnyFunSuite
+
+import java.awt.Point
+import java.lang.reflect.Modifier
 
 /**
  * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#findFunction findFunction]] methods
@@ -201,6 +201,42 @@ class RunChainSuite extends AnyFunSuite {
     assert(runChain[String](new SomeClass(-12), "kind") == "Int")
     assert(runChain(classOf[String], new SomeClass(-12), "kind") == "Int")
   }
+
+  test("runChain fails if last no param func is invalid") {
+    assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist"))
+    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist"))
+    assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist"))
+
+    assert(runChainOpt(new SomeClass(-12), "num.iDontExist").isEmpty)
+    assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist").isEmpty)
+  }
+
+  test("runChain fails if func is invalid") {
+    assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist", classOf[Int]))
+    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist", 1))
+    assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist", 1))
+
+    assert(runChainOpt(new SomeClass(-12), "num.iDontExist", 1).isEmpty)
+    assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist", 1).isEmpty)
+  }
+
+  test("runChain fails if mid last no param func is invalid") {
+    assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist"))
+    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist.doSomething"))
+    assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething"))
+
+    assert(runChainOpt(new SomeClass(-12), "num.iDontExist.doSomething").isEmpty)
+    assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething").isEmpty)
+  }
+
+  test("runChain fails if mid func is invalid") {
+    assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("num.iDontExist.doSomething", classOf[Int]))
+    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist.doSomething", 1))
+    assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething", 1))
+
+    assert(runChainOpt(new SomeClass(-12), "num.iDontExist.doSomething", 1).isEmpty)
+    assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething", 1).isEmpty)
+  }
 }
 
 /**
@@ -213,6 +249,7 @@ class GetSuite extends AnyFunSuite {
 
   test("Can get Static fields using class instance") {
     assert(get[Class[_]](classOf[Integer], "TYPE") == Integer.TYPE)
+    assert(get(classOf[Class[_]], classOf[Integer], "TYPE") == Integer.TYPE)
   }
 
   test("Can get accessible fields") {
@@ -223,6 +260,12 @@ class GetSuite extends AnyFunSuite {
     assert(get[Int](p, "y") == 2)
     assert(p.x == 1)
     assert(p.y == 2)
+  }
+
+  test("Cannot get nonexistent fields") {
+    assertThrows[NoSuchFieldException](classOf[SomeClass].getDeclaredField("iDontExist"))
+    assertThrows[NoSuchFieldError](get(new SomeClass(1), "iDontExist"))
+    assertThrows[NoSuchFieldError](get(classOf[Class[_]], new SomeClass(1), "iDontExist"))
   }
 
   test("Cannot get private fields") {

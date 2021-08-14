@@ -1,12 +1,11 @@
 package com.richousrick.metautils.loader
 
-import java.nio.file.{Files, Paths}
-
 import com.richousrick.metautils.loader.JavaClassLoader._
 import com.richousrick.metautils.utils.InvocationUtilities
 import com.richousrick.metautils.utils.InvocationUtilities._
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.file.{Files, Paths}
 import scala.jdk.StreamConverters._
 import scala.util.Try
 
@@ -78,11 +77,16 @@ class JavaClassLoaderTest extends AnyFunSuite {
 
 	test("JavaSourceFromString getOutputStream") {
 		// getOutputStream from readOnly variant throws exception on write
-		assertThrows[UnsupportedOperationException](new JavaSourceFromString("SomeClass", "class SomeClass{}").openOutputStream())
+		assertThrows[UnsupportedOperationException](new JavaSourceFromString("SomeClass",
+			"class SomeClass{}").openOutputStream())
 
 		// getOutputStream from write variant returns empty stream
 		assert(new JavaSourceFromString("SomeClass", new StreamMapper()).openOutputStream().size() == 0)
 	}
 
-
+	test("JavaSourceFromString cannot open multiple output streams") {
+		val jSrc = new JavaSourceFromString("SomeClass", new StreamMapper())
+		assert(jSrc.openOutputStream().size() == 0)
+		assertThrows[UnsupportedOperationException](jSrc.openOutputStream())
+	}
 }
