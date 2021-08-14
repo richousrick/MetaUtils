@@ -1,6 +1,6 @@
 package com.richousrick.metautils.utils
 
-import com.richousrick.metautils.utils.InvocationUtilities._
+import com.richousrick.metautils.utils.InvocationUtilities.*
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.awt.Point
@@ -22,7 +22,7 @@ class FindMethodSuite extends AnyFunSuite {
       "isSubClass",
       classOf[Boolean],
       classOf[SuperClass],
-      classOf[Int]).getOrElse(fail)
+      classOf[Int]).getOrElse(fail())
     assert(foundMethod == desiredMethod)
 
     // try to get the method using subtypes of the parameter
@@ -30,7 +30,7 @@ class FindMethodSuite extends AnyFunSuite {
       "isSubClass",
       classOf[Boolean],
       classOf[AnotherSubClass],
-      classOf[Int]).getOrElse(fail)
+      classOf[Int]).getOrElse(fail())
     assert(foundSubInstance == desiredMethod)
   }
 
@@ -60,7 +60,7 @@ class FindMethodSuite extends AnyFunSuite {
   }
 
   test("Find method can find methods in: the superclass") {
-    findFunction(exampleClass, "toString", classOf[String]).getOrElse(fail)
+    findFunction(exampleClass, "toString", classOf[String]).getOrElse(fail())
   }
 
   test("Find method works with polymorphism: Different number of params") {
@@ -71,14 +71,14 @@ class FindMethodSuite extends AnyFunSuite {
     assert(allParams != lessParams)
 
     // get method using only subclass
-    assert(findFunction(exampleClass, "isSubClass", classOf[Boolean], classOf[SubClass]).getOrElse(fail) == lessParams)
+    assert(findFunction(exampleClass, "isSubClass", classOf[Boolean], classOf[SubClass]).getOrElse(fail()) == lessParams)
 
     // get method using subclass and int
     assert(findFunction(exampleClass,
       "isSubClass",
       classOf[Boolean],
       classOf[SubClass],
-      classOf[Int]).getOrElse(fail) == allParams)
+      classOf[Int]).getOrElse(fail()) == allParams)
   }
 
   test("Find method works with polymorphism: Different types for params") {
@@ -93,16 +93,16 @@ class FindMethodSuite extends AnyFunSuite {
       "isSubClass",
       classOf[Boolean],
       classOf[SubClass],
-      classOf[Int]).getOrElse(fail) == subClass)
+      classOf[Int]).getOrElse(fail()) == subClass)
 
     // get method using superclass
     assert(findFunction(exampleClass,
       "isSubClass",
       classOf[Boolean],
       classOf[SuperClass],
-      classOf[Int]).getOrElse(fail) == superClass)
+      classOf[Int]).getOrElse(fail()) == superClass)
 
-    // get method using wrong type fails
+    // get method using wrong type fail()s
     assert(findFunction(exampleClass,
       "isSubClass",
       classOf[Boolean],
@@ -173,7 +173,7 @@ class RunSuite extends AnyFunSuite {
   test("Run non existant method throws NoSuchMethodError") {
     val mte = new MetaUtilsTestExample
     // inferred type
-    assertThrows[NoSuchMethodError](InvocationUtilities.run(mte, "NoSuchMethod"))
+    assertThrows[NoSuchMethodError](InvocationUtilities.run[Any](mte, "NoSuchMethod"))
     // generic specified type
     assertThrows[NoSuchMethodError](InvocationUtilities.run[Boolean](mte, "NoSuchMethod"))
     // provided type
@@ -202,39 +202,39 @@ class RunChainSuite extends AnyFunSuite {
     assert(runChain(classOf[String], new SomeClass(-12), "kind") == "Int")
   }
 
-  test("runChain fails if last no param func is invalid") {
+  test("runChain fail()s if last no param func is invalid") {
     assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist"))
-    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist"))
+    assertThrows[NoSuchMethodError](runChain[Any](new SomeClass(-12), "num.iDontExist"))
     assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist"))
 
-    assert(runChainOpt(new SomeClass(-12), "num.iDontExist").isEmpty)
+    assert(runChainOpt[Any](new SomeClass(-12), "num.iDontExist").isEmpty)
     assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist").isEmpty)
   }
 
-  test("runChain fails if func is invalid") {
+  test("runChain fail()s if func is invalid") {
     assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist", classOf[Int]))
-    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist", 1))
+    assertThrows[NoSuchMethodError](runChain[Any](new SomeClass(-12), "num.iDontExist", 1))
     assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist", 1))
 
-    assert(runChainOpt(new SomeClass(-12), "num.iDontExist", 1).isEmpty)
+    assert(runChainOpt[Any](new SomeClass(-12), "num.iDontExist", 1).isEmpty)
     assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist", 1).isEmpty)
   }
 
-  test("runChain fails if mid last no param func is invalid") {
+  test("runChain fail()s if mid last no param func is invalid") {
     assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("iDontExist"))
-    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist.doSomething"))
+    assertThrows[NoSuchMethodError](runChain[Any](new SomeClass(-12), "num.iDontExist.doSomething"))
     assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething"))
 
-    assert(runChainOpt(new SomeClass(-12), "num.iDontExist.doSomething").isEmpty)
+    assert(runChainOpt[Any](new SomeClass(-12), "num.iDontExist.doSomething").isEmpty)
     assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething").isEmpty)
   }
 
-  test("runChain fails if mid func is invalid") {
+  test("runChain fail()s if mid func is invalid") {
     assertThrows[NoSuchMethodException](classOf[Number].getDeclaredMethod("num.iDontExist.doSomething", classOf[Int]))
-    assertThrows[NoSuchMethodError](runChain(new SomeClass(-12), "num.iDontExist.doSomething", 1))
+    assertThrows[NoSuchMethodError](runChain[Any](new SomeClass(-12), "num.iDontExist.doSomething", 1))
     assertThrows[NoSuchMethodError](runChain(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething", 1))
 
-    assert(runChainOpt(new SomeClass(-12), "num.iDontExist.doSomething", 1).isEmpty)
+    assert(runChainOpt[Any](new SomeClass(-12), "num.iDontExist.doSomething", 1).isEmpty)
     assert(runChainOpt(classOf[Class[_]], new SomeClass(-12), "num.iDontExist.doSomething", 1).isEmpty)
   }
 }
@@ -264,7 +264,7 @@ class GetSuite extends AnyFunSuite {
 
   test("Cannot get nonexistent fields") {
     assertThrows[NoSuchFieldException](classOf[SomeClass].getDeclaredField("iDontExist"))
-    assertThrows[NoSuchFieldError](get(new SomeClass(1), "iDontExist"))
+    assertThrows[NoSuchFieldError](get[Any](new SomeClass(1), "iDontExist"))
     assertThrows[NoSuchFieldError](get(classOf[Class[_]], new SomeClass(1), "iDontExist"))
   }
 

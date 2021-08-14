@@ -1,10 +1,9 @@
 package com.richousrick.metautils.loader
 
-import java.nio.file.{Files, Paths}
-
 import org.scalatest.funsuite.AnyFunSuite
 
-import scala.jdk.StreamConverters._
+import java.nio.file.{Files, Paths}
+import scala.jdk.StreamConverters.*
 import scala.util.Try
 
 class ByteArrayClassLoaderTest extends AnyFunSuite {
@@ -30,7 +29,7 @@ class ByteArrayClassLoaderTest extends AnyFunSuite {
 		}
 
 		// assert the parent cannot load classes defined in its child wrapper
-		assert(Try(parent.loadClass("SmallClass")).getOrElse(fail) == null)
+		assert(Try(parent.loadClass("SmallClass")).getOrElse(fail()) == null)
 		assertSuccessNotNull {
 			child.loadClass("SmallClass")
 		}
@@ -64,6 +63,6 @@ class ByteArrayClassLoaderTest extends AnyFunSuite {
 	 * @tparam R result type of func
 	 */
 	private def assertSuccessNotNull[R](func: => R): Unit =
-		assert(Try(func).getOrElse(fail) != null)
+		assert(Try(func).getOrElse(fail()) != null)
 
 }
