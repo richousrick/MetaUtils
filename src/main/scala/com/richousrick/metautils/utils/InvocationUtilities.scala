@@ -494,7 +494,12 @@ object InvocationUtilities {
         case -1 => return true // parameter in method is more specific than the one in the current best
         case 0 => // parameters are identical
         case -2 => // this should never be the case
-          throw new Exception("Comparing two methods that have incomparable parameters")
+          if (p._1.isPrimitive)
+            return true
+          else if (currentBest(p._2).isPrimitive)
+            return false
+          else
+            throw new Exception("Comparing two methods that have incomparable parameters")
       })
     true
   }

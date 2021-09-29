@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.awt.Point
 import java.lang.reflect.Modifier
+import java.util
 
 /**
  * Tests for [[com.richousrick.metautils.utils.InvocationUtilities#findFunction findFunction]] methods
@@ -178,6 +179,14 @@ class RunSuite extends AnyFunSuite {
     assertThrows[NoSuchMethodError](InvocationUtilities.run[Boolean](mte, "NoSuchMethod"))
     // provided type
     assertThrows[NoSuchMethodError](InvocationUtilities.run(classOf[Boolean], mte, "NoSuchMethod"))
+  }
+
+  test("Run works with polymorphic methods with boxed and unboxed variants") {
+    val li = new util.ArrayList[String](util.Arrays.asList("as", "he", "me"))
+    assert(InvocationUtilities.run[String](li, "remove", 1) == "he")
+    assert(li.size() == 2)
+    assert(li.get(0) == "as")
+    assert(li.get(1) == "me")
   }
 }
 
