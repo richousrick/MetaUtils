@@ -151,6 +151,10 @@ class BuildSuite extends AnyFunSuite {
     // call non-existent constructor, using class parameter referencing
     assertThrows[InstantiationException](build(classOf[SubClass], "hello"))
   }
+
+  test("Build works with null params") {
+    assert(build[java.lang.Exception]("Something broke", null).isInstanceOf[Exception])
+  }
 }
 
 /**
@@ -187,6 +191,15 @@ class RunSuite extends AnyFunSuite {
     assert(li.size() == 2)
     assert(li.get(0) == "as")
     assert(li.get(1) == "me")
+
+    assert(InvocationUtilities.run[Boolean](li, "remove", "as"))
+    assert(li.size == 1)
+    assert(li.get(0) == "me")
+  }
+
+  test("Run works with null parameter") {
+    val li = new util.ArrayList[String](util.Arrays.asList("as", "he", "me"))
+    assert(!InvocationUtilities.run[Boolean](li, "contains", null))
   }
 }
 

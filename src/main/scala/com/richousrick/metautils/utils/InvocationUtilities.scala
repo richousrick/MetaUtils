@@ -136,7 +136,7 @@ object InvocationUtilities {
    * @return the created object if successful, None otherwise.
    */
   def buildOpt[C](clazz: Class[C], params: Any*): Option[C] =
-    findConstructor(clazz, params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*).map(_.newInstance(params: _*))
+    findConstructor(clazz, toTypes(params): _*).map(_.newInstance(params: _*))
 
   /**
    * Attempts to find the desired constructor
@@ -207,7 +207,7 @@ object InvocationUtilities {
     getGenericFunction(instance,
       funcName,
       clazz,
-      params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*)(allowGenericReturns = false).map(_ (params))
+      toTypes(params): _*)(allowGenericReturns = false).map(_ (params))
 
   /**
    * Attempts to run the specified method.<br>
@@ -229,7 +229,7 @@ object InvocationUtilities {
     getGenericFunction(instance,
       funcName,
       rt.runtimeClass.asInstanceOf[Class[R]],
-      params.map(p => p.getClass.asInstanceOf[Class[Any]]): _*)(allowGenericReturns = true).map(_ (params))
+      toTypes(params): _*)(allowGenericReturns = true).map(_ (params))
 
 
   /**
@@ -454,7 +454,8 @@ object InvocationUtilities {
       f =>
         f.getParameterTypes.zip(params).forall {
           case (c1: Class[_], c2: Class[_]) => compareClass(c1, c2) >= 0
-          case _ => throw new RuntimeException("This should not be reachable")
+          case (_, null) => true // one of the target types are null, this means the type is not known at runtime.
+          case (c1, c2) => throw new RuntimeException(s"This should not be reachable, $c1, $c2")
         }
     )
     // check over the number of matching methods
@@ -504,4 +505,15 @@ object InvocationUtilities {
     true
   }
 
+  /**
+   * Converts a list of vars into a list of thier types
+   *
+   * @param vars list of variables to get the types of
+   * @return the types of the input vars
+   */
+  private def toTypes(vars: Seq[Any]): Seq[Class[Any]] =
+    vars.map {
+      case null => null
+      case p => p.getClass.asInstanceOf[Class[Any]]
+    }
 }
