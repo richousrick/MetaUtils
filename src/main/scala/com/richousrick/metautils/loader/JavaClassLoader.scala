@@ -1,12 +1,15 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.loader
 
 import java.io.{ByteArrayOutputStream, PrintWriter}
 import java.net.URI
-
+import javax.tools.*
 import javax.tools.JavaFileObject.Kind
-import javax.tools._
-
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * Files to enable compiling and loading Java files from strings.

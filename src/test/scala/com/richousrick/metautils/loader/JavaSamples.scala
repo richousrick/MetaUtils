@@ -1,8 +1,12 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.loader
 
 import java.nio.file.{Files, Paths}
-
-import scala.jdk.StreamConverters._
+import scala.jdk.StreamConverters.*
 
 object JavaSamples {
 

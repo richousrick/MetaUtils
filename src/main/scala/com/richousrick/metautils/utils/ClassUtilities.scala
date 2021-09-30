@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.utils
 
 import scala.util.Try
@@ -14,7 +19,7 @@ object ClassUtilities {
 	 * @param c1               the first class to compare
 	 * @param c2               the second class to compare
 	 * @param fuzzyPrimitive   if primitives should be treated as equal to their wrapper classes.
-	 *                       i.e. what should the result of Class[Integer] == Class[int] be?
+	 *                         i.e. what should the result of Class[Integer] == Class[int] be?
 	 * @param primitiveInherit if primitive classes should inherit their wrapper classes supertypes.
 	 *                         If true primitive types will be considered subtypes of Serializable, Comparable
 	 *                         and in the case of numeric primitives, Number.

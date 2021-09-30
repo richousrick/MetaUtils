@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.loader
 
 import scala.collection.mutable

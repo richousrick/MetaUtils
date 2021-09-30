@@ -1,9 +1,14 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.utils
 
-import java.lang
-
-import com.richousrick.metautils.utils.ClassUtilities._
+import com.richousrick.metautils.utils.ClassUtilities.*
 import org.scalatest.funsuite.AnyFunSuite
+
+import java.lang
 
 class ClassUtilitiesTest extends AnyFunSuite {
 

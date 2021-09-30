@@ -1,12 +1,17 @@
+/*
+ * Copyright (c) 2021. Rikkey Paal rikkeypaal@gmail.com
+ * This file is part of MetaUtils
+ */
+
 package com.richousrick.metautils.loader
 
-import com.richousrick.metautils.loader.JavaClassLoader._
+import com.richousrick.metautils.loader.JavaClassLoader.*
 import com.richousrick.metautils.utils.InvocationUtilities
-import com.richousrick.metautils.utils.InvocationUtilities._
+import com.richousrick.metautils.utils.InvocationUtilities.*
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
-import scala.jdk.StreamConverters._
+import scala.jdk.StreamConverters.*
 import scala.util.Try
 
 class JavaClassLoaderTest extends AnyFunSuite {
